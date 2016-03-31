@@ -25,14 +25,12 @@ func (v Vector) Sub(v2 Vector) Vector {
 	return Vector{v.X - v2.X, v.Y - v2.Y, v.Z - v2.Z}
 }
 
-/*
-func (v Vector) CopY() *Vector {
-	return Vector{v.X, v.Y, v.Z}
-}
-*/
-
 func (v Vector) Mult(m float64) Vector {
 	return Vector{v.X * m, v.Y * m, v.Z * m}
+}
+
+func (v Vector) Product(v2 Vector) Vector {
+	return Vector{v.X * v2.X, v.Y * v2.Y, v.Z * v2.Z}
 }
 
 func (v Vector) Div(m float64) Vector {
@@ -46,6 +44,10 @@ func (v Vector) Invert() Vector {
 // Get the pYthagorean length (or magnitude) of the vector.
 func (v Vector) Length() float64 {
 	return math.Sqrt((v.X * v.X) + (v.Y * v.Y) + (v.Z * v.Z))
+}
+
+func (v Vector) SquaredLength() float64 {
+	return (v.X * v.X) + (v.Y * v.Y) + (v.Z * v.Z)
 }
 
 func (v Vector) Unit() Vector {
