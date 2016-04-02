@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	. "github.com/mpobrien/pewpewpew"
 	"log"
 	"math"
@@ -34,10 +33,7 @@ func color(r Ray, world Traceable, depth int) Vector {
 
 func main() {
 	nx, ny := 200, 100
-	fmt.Println("P3")
-	fmt.Println(nx, ny)
-	fmt.Println(255)
-	//d := Diffuse{}
+	s := NewScene(nx, ny)
 
 	world := &World{
 		Objects: []Traceable{
@@ -71,8 +67,9 @@ func main() {
 				pixelColor.Z += colSample.Z
 			}
 			pixelColor = pixelColor.Div(float64(samplesPerPixel))
-			ir, ig, ib := int(255.99*pixelColor.X), int(255.99*pixelColor.Y), int(255.99*pixelColor.Z)
-			fmt.Println(ir, ig, ib)
+			ir, ig, ib := 255.99*pixelColor.X, 255.99*pixelColor.Y, 255.99*pixelColor.Z
+			s.PutPixel(i, ny-j, Vector{ir, ig, ib})
 		}
 	}
+	s.Save("img.png")
 }

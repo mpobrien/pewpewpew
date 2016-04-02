@@ -3,9 +3,6 @@ package pewpewpew
 import "math"
 import "math/rand"
 
-type Scene struct {
-}
-
 type Traceable interface {
 	Trace(r Ray, tMin, tMax float64) *Hit
 }
