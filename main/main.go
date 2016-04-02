@@ -37,12 +37,15 @@ func main() {
 	fmt.Println("P3")
 	fmt.Println(nx, ny)
 	fmt.Println(255)
-	d := Metal{}
+	//d := Diffuse{}
 
 	world := &World{
 		Objects: []Traceable{
-			Sphere{0.5, Vector{0, 0, -1}, d},
-			Sphere{100, Vector{0, -100.5, -1}, d},
+			//Sphere{5, Vector{0, 0, -10}, Diffuse{}},
+			Sphere{2, Vector{7, 2, -8}, Metal{}},
+			//Sphere{5, Vector{1, 1, 2}, Metal{}},
+			Sphere{0.5, Vector{-.4, 0, -1}, Diffuse{}},
+			Sphere{100, Vector{0, -100.5, -1}, Diffuse{}},
 		},
 	}
 

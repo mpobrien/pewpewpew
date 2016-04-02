@@ -36,7 +36,7 @@ func reflect(v, normal Vector) Vector {
 func (m Metal) Scatter(r Ray, h Hit) (Ray, Vector, bool) {
 	reflected := reflect(r.Direction.Unit(), h.Normal)
 	scattered := Ray{h.HitPoint, reflected}
-	return scattered, Vector{0.6, 0.6, 0.6}, Dot(scattered.Direction, h.Normal) > 0
+	return scattered, Vector{0.3, 0.5, 0.9}, Dot(scattered.Direction, h.Normal) > 0
 }
 
 func randPointInUnitSphere() Vector {
