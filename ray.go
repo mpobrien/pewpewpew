@@ -4,7 +4,7 @@ import "math"
 import "math/rand"
 
 type Traceable interface {
-	Trace(r Ray, tMin, tMax float64) *Hit
+	Trace(r *Ray, tMin, tMax float64) *Hit
 }
 
 type Scatterer interface {
@@ -71,7 +71,7 @@ type World struct {
 	Objects []Traceable
 }
 
-func (w *World) Trace(r Ray, tMin, tMax float64) *Hit {
+func (w *World) Trace(r *Ray, tMin, tMax float64) *Hit {
 	var closestT = tMax
 	var closestHit *Hit
 	for _, o := range w.Objects {
@@ -90,7 +90,53 @@ type Sphere struct {
 	Material Scatterer
 }
 
-func (s Sphere) Trace(r Ray, tMin, tMax float64) *Hit {
+func fmin(x, y float64) float64 {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func fmax(x, y float64) float64 {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+func aabb(vMin, vMax Vector, r *Ray, tMin, tMax float64) bool {
+	x01, x02 := (vMin.X-r.Origin.X)/r.Direction.X, (vMax.X - r.Origin.X/r.Direction.X)
+	t0, t1 := fmin(x01, x02), fmax(x01, x02)
+	tMin = fmax(t0, tMin)
+	tMax = fmin(t1, tMax)
+	if tMax < tMin {
+		return false
+	}
+
+	y01, y02 := (vMin.Y-r.Origin.Y)/r.Direction.Y, (vMax.Y - r.Origin.Y/r.Direction.Y)
+	t0, t1 = fmin(y01, y02), fmax(y01, y02)
+	tMin = fmax(t0, tMin)
+	tMax = fmin(t1, tMax)
+	if tMax < tMin {
+		return false
+	}
+
+	z01, z02 := (vMin.Z-r.Origin.Z)/r.Direction.Z, (vMax.Z - r.Origin.Z/r.Direction.Z)
+	t0, t1 = fmin(z01, z02), fmax(z01, z02)
+	tMin = fmax(t0, tMin)
+	tMax = fmin(t1, tMax)
+	if tMax < tMin {
+		return false
+	}
+	return true
+}
+
+func (s Sphere) Trace(r *Ray, tMin, tMax float64) *Hit {
+	//rVec := Vector{s.Radius, s.Radius, s.Radius}
+	//if !aabb(s.Center.Sub(rVec), s.Center.Add(rVec), r, tMin, tMax) {
+	//return nil
+	//}
+	//check bounding box
 	oc := r.Origin.Sub(s.Center)
 	a := Dot(r.Direction, r.Direction)
 	b := 2 * Dot(oc, r.Direction)

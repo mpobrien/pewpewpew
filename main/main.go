@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	. "github.com/mpobrien/pewpewpew"
+	"github.com/pkg/profile"
 	"log"
 	"math"
 	"math/rand"
 	"os"
-	"runtime"
 	"sync"
 )
 
@@ -16,7 +16,7 @@ var l = log.New(os.Stderr, "", 0)
 const MaxDepth = 50
 
 func color(r Ray, world Traceable, depth int) Vector {
-	h := world.Trace(r, 0, math.MaxFloat64)
+	h := world.Trace(&r, 0, math.MaxFloat64)
 	if h != nil {
 		if depth < 50 {
 			scattered, attenuation, ok := h.Scatter(r, *h)
@@ -35,14 +35,23 @@ func color(r Ray, world Traceable, depth int) Vector {
 }
 
 func main() {
-	nx, ny := 800, 400
+	defer profile.Start().Stop()
+
+	nx, ny := 400, 200
 	s := NewScene(nx, ny)
 
 	numSpheres := 100
 	world := &World{Objects: make([]Traceable, 0, numSpheres)}
+	metal := Metal{}
+	diffuse := Diffuse{}
 
 	for i := 0; i < 100; i++ {
-		world.Objects = append(world.Objects, Sphere{float64(rand.Intn(3)) + 1, Vector{float64(rand.Intn(100) - 50), float64(rand.Intn(100) - 50), float64(rand.Intn(100) - 50)}, Metal{}})
+
+		obj := Sphere{float64(rand.Intn(3)) + 1, Vector{float64(rand.Intn(100) - 50), float64(rand.Intn(100) - 50), float64(rand.Intn(100) - 50)}, metal}
+		if rand.Intn(2) > 0 {
+			obj.Material = diffuse
+		}
+		world.Objects = append(world.Objects, obj)
 	}
 
 	/*
@@ -63,18 +72,20 @@ func main() {
 
 	samplesPerPixel := 100
 
-	numWorkers := runtime.NumCPU()
+	numWorkers := 4
 	fmt.Println("starting", numWorkers)
-	runtime.GOMAXPROCS(numWorkers)
+	//runtime.GOMAXPROCS(numWorkers)
 	subImageHeight := ny / numWorkers
 
 	wg := sync.WaitGroup{}
 	for w := 0; w < numWorkers; w++ {
 
 		wg.Add(1)
-		go func(minJ, maxJ int) {
+		go func(id, minJ, maxJ int) {
+			fmt.Println("i'm doing ", minJ, maxJ)
 			defer wg.Done()
 			for j := minJ; j < maxJ; j++ {
+				fmt.Println(id, "doing", j)
 				for i := 0; i < nx; i++ {
 					pixelColor := Vector{0, 0, 0}
 					for s := 0; s < samplesPerPixel; s++ {
@@ -91,7 +102,7 @@ func main() {
 					s.PutPixel(i, ny-j, Vector{ir, ig, ib})
 				}
 			}
-		}(subImageHeight*w, (subImageHeight*w)+subImageHeight)
+		}(w, subImageHeight*w, (subImageHeight*w)+subImageHeight)
 	}
 	wg.Wait()
 	s.Save("img.png")
