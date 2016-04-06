@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	. "github.com/mpobrien/pewpewpew"
 	"log"
 	"math"
 	"math/rand"
 	"os"
+	"runtime"
+	"sync"
 )
 
 var l = log.New(os.Stderr, "", 0)
@@ -32,21 +35,27 @@ func color(r Ray, world Traceable, depth int) Vector {
 }
 
 func main() {
-	nx, ny := 200, 100
+	nx, ny := 800, 400
 	s := NewScene(nx, ny)
 
-	world := &World{
-		Objects: []Traceable{
-			//Sphere{5, Vector{0, 0, -10}, Diffuse{}},
-			Sphere{2, Vector{7, 2, -8}, Metal{}},
-			//Sphere{5, Vector{1, 1, 2}, Metal{}},
-			Sphere{0.5, Vector{-.4, 0, -1}, Diffuse{}},
-			Sphere{100, Vector{0, -100.5, -1}, Diffuse{}},
-		},
+	numSpheres := 100
+	world := &World{Objects: make([]Traceable, 0, numSpheres)}
+
+	for i := 0; i < 100; i++ {
+		world.Objects = append(world.Objects, Sphere{float64(rand.Intn(3)) + 1, Vector{float64(rand.Intn(100) - 50), float64(rand.Intn(100) - 50), float64(rand.Intn(100) - 50)}, Metal{}})
 	}
 
+	/*
+		{
+			//Sphere{5, Vector{0, 0, -10}, Diffuse{}},
+			Sphere{20, Vector{7, 2, -8}, Metal{}},
+			//Sphere{5, Vector{1, 1, 2}, Metal{}},
+			Sphere{5, Vector{-.4, 0, -1}, Diffuse{}},
+			Sphere{10, Vector{0, -100.5, -1}, Diffuse{}},
+		},
+	*/
 	camera := Camera{
-		Origin:     Vector{0, 0, 0},
+		Origin:     Vector{0, 0, 100},
 		LowerLeft:  Vector{-2, -1, -1},
 		Horizontal: Vector{4, 0, 0},
 		Vertical:   Vector{0, 2, 0},
@@ -54,22 +63,36 @@ func main() {
 
 	samplesPerPixel := 100
 
-	for j := ny - 1; j >= 0; j-- {
-		for i := 0; i < nx; i++ {
-			pixelColor := Vector{0, 0, 0}
-			for s := 0; s < samplesPerPixel; s++ {
-				u := (float64(i) + rand.Float64()) / float64(nx)
-				v := (float64(j) + rand.Float64()) / float64(ny)
-				r := camera.RayToPixel(u, v)
-				colSample := color(r, world, 0)
-				pixelColor.X += colSample.X
-				pixelColor.Y += colSample.Y
-				pixelColor.Z += colSample.Z
+	numWorkers := runtime.NumCPU()
+	fmt.Println("starting", numWorkers)
+	runtime.GOMAXPROCS(numWorkers)
+	subImageHeight := ny / numWorkers
+
+	wg := sync.WaitGroup{}
+	for w := 0; w < numWorkers; w++ {
+
+		wg.Add(1)
+		go func(minJ, maxJ int) {
+			defer wg.Done()
+			for j := minJ; j < maxJ; j++ {
+				for i := 0; i < nx; i++ {
+					pixelColor := Vector{0, 0, 0}
+					for s := 0; s < samplesPerPixel; s++ {
+						u := (float64(i) + rand.Float64()) / float64(nx)
+						v := (float64(j) + rand.Float64()) / float64(ny)
+						r := camera.RayToPixel(u, v)
+						colSample := color(r, world, 0)
+						pixelColor.X += colSample.X
+						pixelColor.Y += colSample.Y
+						pixelColor.Z += colSample.Z
+					}
+					pixelColor = pixelColor.Div(float64(samplesPerPixel))
+					ir, ig, ib := 255.99*pixelColor.X, 255.99*pixelColor.Y, 255.99*pixelColor.Z
+					s.PutPixel(i, ny-j, Vector{ir, ig, ib})
+				}
 			}
-			pixelColor = pixelColor.Div(float64(samplesPerPixel))
-			ir, ig, ib := 255.99*pixelColor.X, 255.99*pixelColor.Y, 255.99*pixelColor.Z
-			s.PutPixel(i, ny-j, Vector{ir, ig, ib})
-		}
+		}(subImageHeight*w, (subImageHeight*w)+subImageHeight)
 	}
+	wg.Wait()
 	s.Save("img.png")
 }
