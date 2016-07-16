@@ -37,7 +37,7 @@ func color(r Ray, world Traceable, depth int) Vector {
 func main() {
 	defer profile.Start().Stop()
 
-	nx, ny := 400, 200
+	nx, ny := 800, 400
 	s := NewScene(nx, ny)
 
 	numSpheres := 100
